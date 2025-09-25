@@ -9,4 +9,3 @@ import mtranslate as mt
 
 env_vars = dotenv_values(".env")
 
-Input
