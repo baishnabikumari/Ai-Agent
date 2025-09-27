@@ -1,2 +1,8 @@
-.venv
+# Ignore environment files
 Backend/.env
+
+# Ignore virtual environment
+.venv/
+
+# Ignore pycache
+__pycache__/
