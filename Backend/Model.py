@@ -1,32 +1,24 @@
+# Backend/model.py
 import os
+import cohere
 from dotenv import load_dotenv
-import openai
-from groq import Groq
 
+# Load API key from .env
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 
-openai.api_key = OPENAI_API_KEY
-groq_client = Groq(api_key=GROQ_API_KEY)
+# Initialize client
+co = cohere.Client(api_key=COHERE_API_KEY)
 
-def query_openai(prompt: str) -> str:
+def query_ai(prompt: str) -> str:
+    """
+    Send a prompt to Cohere and return the AI's response.
+    """
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}]
+        response = co.chat(
+            model="command-r-plus",  # Cohere's latest best chat model
+            message=prompt
         )
-        return response["choices"][0]["message"]["content"]
+        return response.text.strip()
     except Exception as e:
-        return f"Error (OpenAI): {str(e)}"
-    
-def query_groq(prompt: str) -> str:
-    try:
-        response = groq_client.chat.completion.create(
-            model='llama3-8b-8192',
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Error (Groq): {str(e)}"
-
+        return f"[Error: {str(e)}]"
