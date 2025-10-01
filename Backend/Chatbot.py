@@ -1,18 +1,25 @@
 # Backend/Chatbot.py
-import openai
+
 import os
+from dotenv import load_dotenv
+import cohere
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+load_dotenv()
 
-def get_response(command, mode="chat"):
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+
+if not COHERE_API_KEY:
+    raise ValueError("❌ COHERE_API_KEY not found in environment")
+
+co = cohere.Client(COHERE_API_KEY)
+
+def get_response(prompt: str) -> str:
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # or gpt-4 if you have access
-            messages=[
-                {"role": "system", "content": "You are Jarvis AI, a helpful assistant."},
-                {"role": "user", "content": command}
-            ]
+        # Correct Cohere chat usage
+        response = co.chat(
+            model="command-a-03-2025",  # ✅ valid Cohere model
+            message=prompt              # ✅ use "message", not "messages"
         )
-        return response["choices"][0]["message"]["content"]
+        return response.text.strip()
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Jarvis Error: {e}"

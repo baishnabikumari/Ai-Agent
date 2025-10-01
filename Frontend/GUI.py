@@ -1,119 +1,122 @@
+import sys
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QTextEdit, QLineEdit, QPushButton, QLabel, QScrollArea, QFrame
 )
-from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 from Backend.Assistant import process_command
-import sys
 
 
-class ChatBubble(QLabel):
-    def __init__(self, text, is_user=False):
-        super().__init__(text)
-        self.setWordWrap(True)
-        self.setMargin(10)
-        self.setStyleSheet(
-            """
-            QLabel {
-                border-radius: 15px;
-                padding: 10px;
-            }
-            """
-        )
-        if is_user:
-            self.setStyleSheet(
-                """
-                QLabel {
-                    background-color: #DCF8C6;
-                    color: black;
-                    border-radius: 15px;
-                    padding: 10px;
-                }
-                """
-            )
-        else:
-            self.setStyleSheet(
-                """
-                QLabel {
-                    background-color: #FFFFFF;
-                    color: black;
-                    border-radius: 15px;
-                    padding: 10px;
-                }
-                """
-            )
-
-
-class JarvisApp(QWidget):
+class ChatWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Jarvis AI")
-        self.setGeometry(200, 100, 450, 600)
-        self.setStyleSheet("background-color: #F5F5F5;")
+        self.setGeometry(300, 100, 450, 650)
 
-        # Main layout
-        layout = QVBoxLayout(self)
+        # --- Main Layout ---
+        main_layout = QVBoxLayout(self)
 
-        # Logo + Title
-        header = QLabel()
-        pixmap = QPixmap("Frontend/graphic/jarvis.gif")
-        pixmap = pixmap.scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        header.setPixmap(pixmap)
-        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # --- Logo + Title ---
+        self.logo_label = QLabel()
+        pixmap = QPixmap("Frontend/graphic/jarvis_logo.png").scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio)
+        self.logo_label.setPixmap(pixmap)
+        self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        title = QLabel("Jarvis AI\n<small><i>Online</i></small>")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        self.title_label = QLabel("Jarvis AI\n<small><i>Online</i></small>")
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label.setStyleSheet("color: white; font-size: 18px; font-weight: bold;")
 
-        layout.addWidget(header)
-        layout.addWidget(title)
+        main_layout.addWidget(self.logo_label)
+        main_layout.addWidget(self.title_label)
 
-        # Chat area with scroll
-        self.chat_area = QVBoxLayout()
-        self.chat_area.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # --- Chat Area ---
+        self.chat_area = QTextEdit()
+        self.chat_area.setReadOnly(True)
+        self.chat_area.setStyleSheet("""
+            QTextEdit {
+                background-color: #2e2e2e;
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+                font-size: 14px;
+            }
+        """)
+        main_layout.addWidget(self.chat_area, stretch=1)
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll_content = QWidget()
-        scroll_content.setLayout(self.chat_area)
-        scroll.setWidget(scroll_content)
-
-        layout.addWidget(scroll)
-
-        # Input field
+        # --- Input + Button ---
         input_layout = QHBoxLayout()
+
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText("How may I help you?")
+        self.input_field.setStyleSheet("""
+            QLineEdit {
+                background-color: #1e1e1e;
+                border: 1px solid #555;
+                border-radius: 12px;
+                padding: 10px;
+                color: white;
+                font-size: 14px;
+            }
+        """)
         self.input_field.returnPressed.connect(self.send_message)
 
-        send_btn = QPushButton("➤")
-        send_btn.setFixedWidth(50)
-        send_btn.clicked.connect(self.send_message)
+        self.send_button = QPushButton("➤")
+        self.send_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3a86ff;
+                color: white;
+                border-radius: 12px;
+                font-size: 16px;
+                padding: 8px 16px;
+            }
+            QPushButton:hover {
+                background-color: #266dd3;
+            }
+        """)
+        self.send_button.clicked.connect(self.send_message)
 
-        input_layout.addWidget(self.input_field)
-        input_layout.addWidget(send_btn)
-        layout.addLayout(input_layout)
+        input_layout.addWidget(self.input_field, stretch=1)
+        input_layout.addWidget(self.send_button)
+
+        main_layout.addLayout(input_layout)
+
+        # --- Dark Theme ---
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #121212;
+                color: white;
+                font-family: 'Segoe UI', sans-serif;
+            }
+        """)
 
     def send_message(self):
         user_text = self.input_field.text().strip()
         if not user_text:
             return
 
-        # Add user bubble
-        self.chat_area.addWidget(ChatBubble(user_text, is_user=True))
+        # Show user message
+        self.chat_area.append(f"<p style='background:#4caf50; padding:8px; border-radius:8px; color:black;'><b>You:</b> {user_text}</p>")
 
-        # Process AI response
+        # Get Jarvis response
         bot_response = process_command(user_text)
-        self.chat_area.addWidget(ChatBubble(bot_response, is_user=False))
+
+        # Show bot response
+        self.chat_area.append(f"<p style='background:#2e2e2e; padding:8px; border-radius:8px;'><b>Jarvis:</b> {bot_response}</p>")
+
+        # Scroll to bottom
+        self.chat_area.verticalScrollBar().setValue(self.chat_area.verticalScrollBar().maximum())
 
         # Clear input
         self.input_field.clear()
 
 
-# ✅ Run GUI function
 def run_gui():
     app = QApplication(sys.argv)
-    window = JarvisApp()
+    window = ChatWindow()
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    run_gui()
