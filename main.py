@@ -1,4 +1,7 @@
-from Frontend.gui import run_gui
+from Frontend.gui import ChatApp
+import tkinter as tk
 
 if __name__ == "__main__":
-    run_gui()
+    root = tk.Tk()
+    app = ChatApp(root)
+    root.mainloop()
