@@ -1,9 +1,3 @@
-openai
-groq
-speechrecognition
-pyttsx3
-pyaudio
+cohere
 python-dotenv
-requests
-beautifulsoup4
-PyQt5
+pillow

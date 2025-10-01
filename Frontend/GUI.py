@@ -1,193 +1,156 @@
-# Frontend/gui.py
-import os
 import tkinter as tk
-from tkinter import ttk
+from tkinter import Scrollbar, Canvas
 from PIL import Image, ImageTk
-import threading
+import os
+from datetime import datetime
 from Backend.Assistant import process_command
 
-# Assets path
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS_DIR = os.path.join(HERE, "assets")
-
-def load_image(name, size=None):
-    path = os.path.join(ASSETS_DIR, name)
-    try:
-        img = Image.open(path)
-        if size:
-            img = img.resize(size, Image.LANCZOS)
-        return ImageTk.PhotoImage(img)
-    except Exception as e:
-        print(f"[Assets] Error loading {path}: {e}")
-        return None
-
+ASSETS_PATH = os.path.join(os.path.dirname(__file__), "..", "assets")
 
 class ChatApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Jarvis AI")
-        self.WIDTH, self.HEIGHT = 400, 740
-        self.root.geometry(f"{self.WIDTH}x{self.HEIGHT}")
+        self.root.geometry("400x700")
         self.root.resizable(False, False)
-
-        # Images
-        self.bg_img = load_image("bg.jpg", size=(self.WIDTH, self.HEIGHT))
-        self.bot_avatar = load_image("jarvis.png", size=(36, 36))
-        self.user_avatar = load_image("user.png", size=(36, 36))
-        self.send_icon = load_image("send.png", size=(28, 28))
-
-        # Background
-        if self.bg_img:
-            self.bg_label = tk.Label(self.root, image=self.bg_img)
-            self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-        else:
-            self.root.configure(bg="white")
+        self.images = {}
 
         self._create_header()
         self._create_chat_area()
         self._create_input_area()
 
     def _create_header(self):
-        h = tk.Frame(self.root, bg="white", bd=0)
-        h.place(x=0, y=6, width=self.WIDTH, height=110)
+        header_frame = tk.Frame(self.root, height=100, bg="white")
+        header_frame.pack(fill="x")
 
-        if self.bot_avatar:
-            logo = tk.Label(h, image=self.bot_avatar, bg="white")
-            logo.place(relx=0.5, x=-18, y=10)
+        # Jarvis logo (top)
+        jarvis_img = Image.open(os.path.join(ASSETS_PATH, "jarvis.png")).resize((50, 50))
+        self.images["header_jarvis"] = ImageTk.PhotoImage(jarvis_img)
 
-        title = tk.Label(h, text="Jarvis AI", bg="white", fg="#222222",
-                         font=("Arial", 14, "bold"))
-        title.place(relx=0.5, y=72, anchor="center")
-
-        subtitle = tk.Label(h, text="Online", bg="white", fg="#666666",
-                            font=("Arial", 9))
-        subtitle.place(relx=0.5, y=94, anchor="center")
+        tk.Label(header_frame, image=self.images["header_jarvis"], bg="white").pack(pady=5)
+        tk.Label(header_frame, text="Jarvis AI", font=("Helvetica", 16, "bold"), bg="white").pack()
+        tk.Label(header_frame, text="Online", font=("Helvetica", 10), fg="gray", bg="white").pack()
 
     def _create_chat_area(self):
-        top = 120
-        bottom = 80
-        area_h = self.HEIGHT - top - bottom
+        container = tk.Frame(self.root, bg="white")
+        container.pack(fill="both", expand=True)
 
-        container = tk.Frame(self.root, bg="white", bd=0)
-        container.place(x=0, y=top, width=self.WIDTH, height=area_h)
+        self.canvas = Canvas(container, bg="white", highlightthickness=0)
+        self.scrollbar = Scrollbar(container, orient="vertical", command=self.canvas.yview)
+        self.chat_frame = tk.Frame(self.canvas, bg="white")
 
-        self.canvas = tk.Canvas(container, bg="white", highlightthickness=0)
-        self.scrollbar = ttk.Scrollbar(container, orient="vertical", command=self.canvas.yview)
-        self.scrollable = tk.Frame(self.canvas, bg="white")
-
-        self.scrollable.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self.chat_frame.bind(
+            "<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         )
-        self.canvas.create_window((0, 0), window=self.scrollable, anchor="nw")
+
+        self.canvas.create_window((0, 0), window=self.chat_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
         self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
 
     def _create_input_area(self):
-        input_h = 68
-        frame = tk.Frame(self.root, bg="white")
-        frame.place(x=10, y=self.HEIGHT - input_h, width=self.WIDTH - 20, height=input_h - 6)
+        input_frame = tk.Frame(self.root, bg="white", height=60)
+        input_frame.pack(fill="x", side="bottom")
 
-        # Entry
-        self.entry = tk.Entry(frame, font=("Helvetica", 12), fg="#999999", bd=0)
-        self.entry.insert(0, "How may i help you ?")
-        self.entry.bind("<FocusIn>", self._clear_placeholder)
-        self.entry.bind("<FocusOut>", self._set_placeholder)
-        self.entry.bind("<Return>", lambda e: self.send_message())
-        self.entry.place(x=18, y=12, width=self.WIDTH - 110, height=40)
+        self.entry = tk.Entry(
+            input_frame,
+            font=("Helvetica", 14),
+            bg="#1e1e1e",              # dark background
+            fg="white",                # white text
+            insertbackground="white",  # white cursor
+            relief="flat"
+        )
+        self.entry.pack(fill="x", padx=10, pady=10, side="left", expand=True)
+        self.entry.bind("<Return>", self.send_message)
 
-        # Send button
-        if self.send_icon:
-            btn = tk.Button(frame, image=self.send_icon, bd=0, bg="white",
-                            activebackground="white", cursor="hand2",
-                            command=self.send_message)
+        send_img = Image.open(os.path.join(ASSETS_PATH, "send.png")).resize((30, 30))
+        self.images["send_icon"] = ImageTk.PhotoImage(send_img)
+
+        send_btn = tk.Button(
+            input_frame,
+            image=self.images["send_icon"],
+            bg="white",
+            relief="flat",
+            command=self.send_message
+        )
+        send_btn.pack(side="right", padx=5)
+
+    def _add_message(self, message, sender="user"):
+        outer_frame = tk.Frame(self.chat_frame, bg="white")
+
+        if sender == "user":
+            user_img = Image.open(os.path.join(ASSETS_PATH, "user.png")).resize((35, 35))
+            self.images["user_icon"] = ImageTk.PhotoImage(user_img)
+
+            frame = tk.Frame(outer_frame, bg="white")
+
+            bubble = tk.Frame(frame, bg="#8B0000", padx=10, pady=5)
+            text_label = tk.Label(
+                bubble, text=message,
+                font=("Helvetica", 12),
+                bg="#8B0000", fg="white",
+                wraplength=220, justify="left"
+            )
+            text_label.pack(anchor="e")
+
+            time_label = tk.Label(
+                bubble, text=self._get_timestamp(),
+                font=("Helvetica", 8),
+                fg="lightgray", bg="#8B0000"
+            )
+            time_label.pack(anchor="e")
+
+            bubble.pack(side="right")
+            tk.Label(frame, image=self.images["user_icon"], bg="white").pack(side="right", padx=5, anchor="s")
+            frame.pack(side="right")
+
         else:
-            btn = tk.Button(frame, text="Send", bd=0, bg="#10A37F", fg="white",
-                            command=self.send_message)
-        btn.place(x=self.WIDTH - 82, y=8, width=60, height=48)
+            bot_img = Image.open(os.path.join(ASSETS_PATH, "jarvis.png")).resize((35, 35))
+            self.images["bot_icon"] = ImageTk.PhotoImage(bot_img)
 
-    def _clear_placeholder(self, event=None):
-        if self.entry.get().strip() == "How may i help you ?":
-            self.entry.delete(0, tk.END)
-            self.entry.config(fg="#222222")
+            frame = tk.Frame(outer_frame, bg="white")
 
-    def _set_placeholder(self, event=None):
-        if not self.entry.get().strip():
-            self.entry.insert(0, "How may i help you ?")
-            self.entry.config(fg="#999999")
+            tk.Label(frame, image=self.images["bot_icon"], bg="white").pack(side="left", padx=5, anchor="s")
 
-    def _add_bot_message(self, text):
-        row = tk.Frame(self.scrollable, bg="white", pady=6)
-        row.pack(fill="x", anchor="w", padx=12)
+            bubble = tk.Frame(frame, bg="black", padx=10, pady=5)
+            text_label = tk.Label(
+                bubble, text=message,
+                font=("Helvetica", 12),
+                bg="black", fg="white",
+                wraplength=220, justify="left"
+            )
+            text_label.pack(anchor="w")
 
-        if self.bot_avatar:
-            av = tk.Label(row, image=self.bot_avatar, bg="white")
-            av.pack(side="left", padx=(4, 6))
+            time_label = tk.Label(
+                bubble, text=self._get_timestamp(),
+                font=("Helvetica", 8),
+                fg="lightgray", bg="black"
+            )
+            time_label.pack(anchor="e")
 
-        bubble = tk.Label(row, text=text, wraplength=240, justify="left",
-                          bg="#ffffff", fg="#222222", padx=12, pady=8,
-                          font=("Arial", 11), bd=0, relief="flat")
-        bubble.pack(side="left")
+            bubble.pack(side="left")
+            frame.pack(side="left")
 
-        self._autoscroll()
+        outer_frame.pack(anchor="w" if sender == "bot" else "e", pady=5, padx=10)
+        self.canvas.update_idletasks()
+        self.canvas.yview_moveto(1.0)
 
-    def _add_user_message(self, text):
-        row = tk.Frame(self.scrollable, bg="white", pady=6)
-        row.pack(fill="x", anchor="e", padx=12)
-
-        bubble = tk.Label(row, text=text, wraplength=240, justify="left",
-                          bg="#f7f7f7", fg="#222222", padx=12, pady=8,
-                          font=("Arial", 11), bd=0, relief="flat")
-        bubble.pack(side="right", padx=(6, 4))
-
-        if self.user_avatar:
-            av = tk.Label(row, image=self.user_avatar, bg="white")
-            av.pack(side="right", padx=(6, 4))
-
-        self._autoscroll()
-
-    def _autoscroll(self):
-        self.root.update_idletasks()
-        try:
-            self.canvas.yview_moveto(1.0)
-        except Exception:
-            pass
-
-    def send_message(self):
-        text = self.entry.get().strip()
-        if not text or text == "How may i help you ?":
+    def send_message(self, event=None):
+        user_message = self.entry.get().strip()
+        if not user_message:
             return
+        self._add_message(user_message, "user")
+        self.entry.delete(0, "end")
 
-        # Add user message
-        self._add_user_message(text)
-        self.entry.delete(0, tk.END)
+        ai_response = process_command(user_message)
+        self._add_message(ai_response, "bot")
 
-        # Typing indicator
-        typing = tk.Label(self.scrollable, text="...", bg="white", fg="#222222", font=("Arial", 12))
-        typing.pack(anchor="w", padx=18, pady=6)
-        self._autoscroll()
-
-        # Run AI call in thread
-        threading.Thread(target=self._get_response, args=(text, typing), daemon=True).start()
-
-    def _get_response(self, text, typing_widget):
-        response = process_command(text)
-
-        # Update GUI from main thread
-        self.root.after(0, lambda: self._display_response(response, typing_widget))
-
-    def _display_response(self, response, typing_widget):
-        typing_widget.destroy()
-        self._add_bot_message(response)
+    def _get_timestamp(self):
+        return datetime.now().strftime("%H:%M")
 
 
 def run_gui():
     root = tk.Tk()
     app = ChatApp(root)
     root.mainloop()
-
-
-if __name__ == '__main__':
-    run_gui()
