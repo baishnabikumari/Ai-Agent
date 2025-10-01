@@ -1,8 +1,18 @@
-def get_response(user_input: str) -> str:
+# Backend/Chatbot.py
+import openai
+import os
 
-    """
-    Return AI response for given input.
-    You can plug in OpenAI, Cohere, or any LLM here.
-    """
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    return f"Jarvis: I Understood '{user_input}'"
+def get_response(command, mode="chat"):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # or gpt-4 if you have access
+            messages=[
+                {"role": "system", "content": "You are Jarvis AI, a helpful assistant."},
+                {"role": "user", "content": command}
+            ]
+        )
+        return response["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"Error: {str(e)}"

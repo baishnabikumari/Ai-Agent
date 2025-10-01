@@ -18,5 +18,5 @@ def process_command(command: str, mode="auto") -> str:
     elif "search" in command:
         return web_search(command.replace("search", "").strip())
     
-    return get_response(command, mode)
+    return get_response(command)
     
