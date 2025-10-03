@@ -1,4 +1,3 @@
-# Backend/Assistant.py
 import cohere
 from Backend.config import get_api_key, get_model
 

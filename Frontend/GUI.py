@@ -1,4 +1,3 @@
-# Frontend/gui.py
 import tkinter as tk
 from tkinter import Scrollbar, Canvas
 from PIL import Image, ImageTk
@@ -8,7 +7,6 @@ import threading
 from datetime import datetime
 from Backend.Assistant import process_command
 
-# helper to find bundled resources (works with PyInstaller onefile)
 def resource_path(rel_path):
     try:
         base = sys._MEIPASS  # created by PyInstaller
@@ -34,7 +32,6 @@ class ChatApp:
         header_frame = tk.Frame(self.root, height=100, bg="white")
         header_frame.pack(fill="x")
 
-        # Jarvis logo (top) - optional
         try:
             jarvis_img = Image.open(os.path.join(ASSETS_PATH, "jarvis.png")).resize((50, 50))
             self.images["header_jarvis"] = ImageTk.PhotoImage(jarvis_img)
@@ -78,7 +75,6 @@ class ChatApp:
         self.entry.pack(fill="x", padx=10, pady=10, side="left", expand=True)
         self.entry.bind("<Return>", self.send_message)
 
-        # send icon
         try:
             send_img = Image.open(os.path.join(ASSETS_PATH, "send.png")).resize((30, 30))
             self.images["send_icon"] = ImageTk.PhotoImage(send_img)
@@ -91,7 +87,6 @@ class ChatApp:
         outer_frame = tk.Frame(self.chat_frame, bg="white")
 
         if sender == "user":
-            # User bubble
             try:
                 user_img = Image.open(os.path.join(ASSETS_PATH, "user.png")).resize((35, 35))
                 self.images["user_icon"] = ImageTk.PhotoImage(user_img)
@@ -114,7 +109,6 @@ class ChatApp:
             frame.pack(side="right")
 
         elif sender == "bot":
-            # Bot bubble
             try:
                 bot_img = Image.open(os.path.join(ASSETS_PATH, "jarvis.png")).resize((35, 35))
                 self.images["bot_icon"] = ImageTk.PhotoImage(bot_img)
@@ -137,7 +131,6 @@ class ChatApp:
             frame.pack(side="left")
 
         elif sender == "error":
-            # Error bubble (red)
             frame = tk.Frame(outer_frame, bg="white")
             bubble = tk.Frame(frame, bg="#B22222", padx=10, pady=5)
             text_label = tk.Label(bubble, text=message, font=("Helvetica", 12),
@@ -160,7 +153,6 @@ class ChatApp:
         self._add_message(user_message, "user")
         self.entry.delete(0, "end")
 
-        # run AI call in background thread so UI doesn't freeze
         def worker():
             ai_response = process_command(user_message)
 
