@@ -8,3 +8,6 @@ Backend/.env
 __pycache__/
 
 echo -e "dist/\nbuild/\n*.spec\n__pycache__/\n*.pyc\n.env\n" >> .gitignore
+
+dist/*
+!dist/AiAgent-mac.zip
