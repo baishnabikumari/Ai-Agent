@@ -35,7 +35,22 @@ Now,
 2️⃣ 𝑪𝒍𝒐𝒏𝒆 𝒕𝒉𝒆 𝒑𝒓𝒐𝒋𝒆𝒄𝒕
 
 3️⃣ 𝑰𝒏𝒔𝒕𝒂𝒍𝒍 𝒓𝒆𝒒𝒖𝒊𝒓𝒆𝒅 𝒑𝒂𝒄𝒌𝒂𝒈𝒆𝒔
+📦 Installation
 
+Download the latest release:
+AiAgent-mac.zip
+
+Extract the ZIP.
+You’ll get:
+
+---> (AiAgent.app)
+
+
+(First time only on macOS)
+
+Right-click → Open → confirm security prompt.
+
+After that, you can double-click to launch normally.
 -------------------------------------------------------------
 
 
