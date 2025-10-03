@@ -1,0 +1,1 @@
+([('AiAgent', '/Users/baishnabi/Ai Agent/dist/AiAgent', 'EXECUTABLE')],)
